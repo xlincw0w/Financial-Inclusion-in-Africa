@@ -17,7 +17,7 @@ from pandas import read_csv
 class neural_net():
     def __init__(self):
 
-        self.learning_rate = 0.001
+        self.learning_rate = 0.01
         
         self.l1 = tf.keras.layers.Dense(units=32,
                                        input_shape=(11,),
@@ -109,24 +109,30 @@ if __name__ == '__main__':
 
     #nn.save_model(res[1])
 
-    test = numerize_data(test)
-    test_data = test.drop(columns=['uniqueid'])
-    uniqueids = test.pop('uniqueid')
-    predict = nn.predict(test_data)
-    predict = predict.argmax(1)
-    dfpred = pd.DataFrame({'bank_account':predict})
-    test_data['bank_account'] = dfpred
-    test_data = test_data.replace({'country': [0, 1, 2, 3]}, {'country': ['Kenya', 'Rwanda', 'Tanzania', 'Uganda'] })
-    test_data['uniqueid'] = uniqueids + ' x ' + test_data['country']
-    result = test_data[['uniqueid', 'bank_account']]
+    print()
+    print('Do you want to generate the Submission file ? { y : yes } : ')
+    generate = input('... : ')
+    
+    if generate == 'y':
 
-    print('Generating the file ...')
-    for uniqueid in submissionf['uniqueid']:
-      index = result.index[result['uniqueid'] == uniqueid].tolist()[0]
-      bank = result.iloc[index]['bank_account']
-      submissionf.at[submissionf.index[submissionf['uniqueid'] == uniqueid].tolist()[0], 'bank_account'] = bank
+        test = numerize_data(test)
+        test_data = test.drop(columns=['uniqueid'])
+        uniqueids = test.pop('uniqueid')
+        predict = nn.predict(test_data)
+        predict = predict.argmax(1)
+        dfpred = pd.DataFrame({'bank_account':predict})
+        test_data['bank_account'] = dfpred
+        test_data = test_data.replace({'country': [0, 1, 2, 3]}, {'country': ['Kenya', 'Rwanda', 'Tanzania', 'Uganda'] })
+        test_data['uniqueid'] = uniqueids + ' x ' + test_data['country']
+        result = test_data[['uniqueid', 'bank_account']]
 
-    submissionf = submissionf.replace({'bank_account': [0.0, 1.0]}, {'bank_account': ['Yes', 'No']})
+        print('Generating the file ...')
+        for uniqueid in submissionf['uniqueid']:
+          index = result.index[result['uniqueid'] == uniqueid].tolist()[0]
+          bank = result.iloc[index]['bank_account']
+          submissionf.at[submissionf.index[submissionf['uniqueid'] == uniqueid].tolist()[0], 'bank_account'] = bank
 
-    submissionf.to_csv('SubmissionFile.csv', index=False) 
-    print('File generated !')
+        submissionf = submissionf.replace({'bank_account': [0.0, 1.0]}, {'bank_account': ['Yes', 'No']})
+
+        submissionf.to_csv('SubmissionFile.csv', index=False) 
+        print('File generated !')

@@ -9,31 +9,36 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 import tensorflow as tf
+import pickle
 from sklearn.model_selection import train_test_split
 from pandas import read_csv
 
 class neural_net():
     def __init__(self):
-        self.learning_rate = 0.0001
+
+        self.learning_rate = 0.001
         
         self.l1 = tf.keras.layers.Dense(units=32,
                                        input_shape=(11,),
                                        activation='relu')
+
         self.l2 = tf.keras.layers.Dense(units=32,
                                        activation='relu')
+
         self.l3 = tf.keras.layers.Dense(units=32,
                                        activation='relu')
+
         self.l4 = tf.keras.layers.Dense(units=2,
                                        activation='softmax')
-        self.model = tf.keras.Sequential([self.l1, self.l2,  self.l3, self.l4])
+
+        self.model = tf.keras.Sequential([self.l1, self.l2, self.l3, self.l4])
         self.model.compile(loss='sparse_categorical_crossentropy',
-                     optimizer=tf.keras.optimizers.Adam(self.learning_rate),
+                     optimizer=tf.keras.optimizers.Adagrad(self.learning_rate),
                      metrics=['accuracy'])
 
     def train(self, features, labels):
-        self.history = self.model.fit(features, labels, epochs=400, batch_size=100)
+        self.history = self.model.fit(features, labels, epochs=200, batch_size=50)
 
     def evaluate(self, features, labels):
         results = self.model.evaluate(features, labels)
@@ -47,15 +52,26 @@ class neural_net():
         plt.ylabel('Loss Magnitude')
         plt.plot(self.history.history['loss'])
         plt.show()
+        
+    def save_model(self, accuracy):
+        if accuracy > 0.75:
+            pickle.dump(self.model, open('model.pickle', 'wb'))
+            print('Model file saved.')
+        else:
+            print('Accuracy wasnt high enough.')
+
+    def load_model(self):
+        self.model = pickle.load(open('model.pickle', 'rb'))
                    
 
 def numerize_data(data):
+  data = data.replace([2016, 2017, 2018], [0, 0, 1])
   data = data.replace(['Kenya', 'Rwanda', 'Tanzania', 'Uganda', 'Yes', 'No'], [0, 1, 2, 3, 1, 0])
   data = data.replace(['Rural', 'Urban', 'Male', 'Female'], [0, 1, 0, 1])
-  data = data.replace(['Spouse', 'Head of Household', 'Other relative', 'Child', 'Parent', 'Other non-relatives'], [0, 1, 2, 3, 4, 5])
-  data = data.replace(['Married/Living together', 'Widowed', 'Single/Never Married', 'Divorced/Seperated', 'Dont know'], [0, 1, 2, 3, 4])
-  data = data.replace(['Secondary education', 'No formal education', 'Vocational/Specialised training', 'Primary education', 'Tertiary education', 'Other/Dont know/RTA'], [0, 1, 2, 3, 4, 5])
-  data = data.replace(['Self employed', 'Government Dependent', 'Formally employed Private', 'Informally employed', 'Formally employed Government', 'Farming and Fishing', 'Remittance Dependent', 'Other Income', 'Dont Know/Refuse to answer', 'No Income'], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+  data = data.replace(['Spouse', 'Head of Household', 'Other relative', 'Child', 'Parent', 'Other non-relatives'], [1, 2, 1, 1, 0, 0])
+  data = data.replace(['Married/Living together', 'Widowed', 'Single/Never Married', 'Divorced/Seperated', 'Dont know'], [1, 0, 0, 0, 1])
+  data = data.replace(['Secondary education', 'No formal education', 'Vocational/Specialised training', 'Primary education', 'Tertiary education', 'Other/Dont know/RTA'], [2, 0, 3, 1, 3, 2])
+  data = data.replace(['Self employed', 'Government Dependent', 'Formally employed Private', 'Informally employed', 'Formally employed Government', 'Farming and Fishing', 'Remittance Dependent', 'Other Income', 'Dont Know/Refuse to answer', 'No Income'], [1, 2, 3, 0, 4, 0, 0, 1, 1, 0])
   return data
                                        
 submissionf = read_csv('data/SubmissionFile.csv')
@@ -70,10 +86,6 @@ train_full.sample(frac=1).reset_index(drop=True)
 
 train_full = numerize_data(train_full)
 
-print(train_full.iloc[0, :])
-print(train_full.keys())
-
-
 features = train_full.drop(columns=['bank_account', 'uniqueid'])
 labels = train_full.pop('bank_account')
 
@@ -82,6 +94,8 @@ train_feat, test_feat, train_lab, test_lab = train_test_split(features, labels, 
 nn = neural_net()
 nn.train(train_feat.values, train_lab.values)
 
+print()
+print('Evaluation : ')
 res = nn.evaluate(test_feat.values, test_lab.values)
 
 #Uncomment to plot loss history
@@ -89,6 +103,8 @@ res = nn.evaluate(test_feat.values, test_lab.values)
 
 print()
 print('Resultat : ', res)
+
+#nn.save_model(res[1])
 
 test = numerize_data(test)
 test_data = test.drop(columns=['uniqueid'])
@@ -101,29 +117,13 @@ test_data = test_data.replace({'country': [0, 1, 2, 3]}, {'country': ['Kenya', '
 test_data['uniqueid'] = uniqueids + ' x ' + test_data['country']
 result = test_data[['uniqueid', 'bank_account']]
 
-print('This could be long !')
+print('Generating the file ...')
 for uniqueid in submissionf['uniqueid']:
   index = result.index[result['uniqueid'] == uniqueid].tolist()[0]
   bank = result.iloc[index]['bank_account']
   submissionf.at[submissionf.index[submissionf['uniqueid'] == uniqueid].tolist()[0], 'bank_account'] = bank
 
-submissionf = submissionf.replace({'bank_account': [0.0, 1.0]}, {'bank_account': ['Yes', 'No'] })
+submissionf = submissionf.replace({'bank_account': [0.0, 1.0]}, {'bank_account': ['Yes', 'No']})
 
-submissionf.to_csv('out.csv', index=False) 
+submissionf.to_csv('SubmissionFile.csv', index=False) 
 print('File generated !')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

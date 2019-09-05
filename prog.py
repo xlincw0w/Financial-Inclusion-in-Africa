@@ -1,5 +1,7 @@
 #! env/bin/python3
 
+#Khazem Khaled 'xlincw0w'
+
 from warnings import simplefilter
 simplefilter(action='ignore', category=FutureWarning)
 

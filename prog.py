@@ -19,14 +19,14 @@ class neural_net():
 
         self.learning_rate = 0.1
         
-        self.l1 = tf.keras.layers.Dense(units=32,
+        self.l1 = tf.keras.layers.Dense(units=16,
                                        input_shape=(10,),
                                        activation='relu')
 
-        self.l2 = tf.keras.layers.Dense(units=32,
+        self.l2 = tf.keras.layers.Dense(units=16,
                                        activation='relu')
 
-        self.l3 = tf.keras.layers.Dense(units=32,
+        self.l3 = tf.keras.layers.Dense(units=16,
                                        activation='relu')
 
         self.l4 = tf.keras.layers.Dense(units=2,

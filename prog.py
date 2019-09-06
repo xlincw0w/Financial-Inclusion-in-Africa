@@ -17,10 +17,10 @@ from pandas import read_csv
 class neural_net():
     def __init__(self):
 
-        self.learning_rate = 0.01
+        self.learning_rate = 0.1
         
         self.l1 = tf.keras.layers.Dense(units=32,
-                                       input_shape=(11,),
+                                       input_shape=(10,),
                                        activation='relu')
 
         self.l2 = tf.keras.layers.Dense(units=32,
@@ -38,7 +38,7 @@ class neural_net():
                      metrics=['accuracy'])
 
     def train(self, features, labels):
-        self.history = self.model.fit(features, labels, epochs=200, batch_size=50)
+        self.history = self.model.fit(features, labels, epochs=100)
 
     def evaluate(self, features, labels):
         results = self.model.evaluate(features, labels)
@@ -83,13 +83,14 @@ if __name__ == '__main__':
     test = read_csv('data/Test_v2.csv')
 
     train_ye = train_origin[train_origin['bank_account'] == 'Yes']
-    train_no = train_origin[train_origin['bank_account'] == 'No'].sample(3312)
+    #train_no = train_origin[train_origin['bank_account'] == 'No'].sample(3312)
+    train_no = train_origin[train_origin['bank_account'] == 'No']
     train_full = pd.DataFrame.append(train_ye, train_no)
     train_full.sample(frac=1).reset_index(drop=True)
 
     train_full = numerize_data(train_full)
 
-    features = train_full.drop(columns=['bank_account', 'uniqueid'])
+    features = train_full.drop(columns=['bank_account', 'uniqueid', 'household_size'])
     labels = train_full.pop('bank_account')
 
     train_feat, test_feat, train_lab, test_lab = train_test_split(features, labels, test_size=0.1)
@@ -116,7 +117,7 @@ if __name__ == '__main__':
     if generate == 'y':
 
         test = numerize_data(test)
-        test_data = test.drop(columns=['uniqueid'])
+        test_data = test.drop(columns=['uniqueid', 'household_size'])
         uniqueids = test.pop('uniqueid')
         predict = nn.predict(test_data)
         predict = predict.argmax(1)
@@ -126,13 +127,16 @@ if __name__ == '__main__':
         test_data['uniqueid'] = uniqueids + ' x ' + test_data['country']
         result = test_data[['uniqueid', 'bank_account']]
 
+        print()
         print('Generating the file ...')
         for uniqueid in submissionf['uniqueid']:
           index = result.index[result['uniqueid'] == uniqueid].tolist()[0]
           bank = result.iloc[index]['bank_account']
           submissionf.at[submissionf.index[submissionf['uniqueid'] == uniqueid].tolist()[0], 'bank_account'] = bank
 
-        submissionf = submissionf.replace({'bank_account': [0.0, 1.0]}, {'bank_account': ['Yes', 'No']})
+        #submissionf = submissionf.replace({'bank_account': [0.0, 1.0]}, {'bank_account': ['Yes', 'No']})
+
+        submissionf['bank_account'] = submissionf['bank_account'].astype(int)
 
         submissionf.to_csv('SubmissionFile.csv', index=False) 
         print('File generated !')

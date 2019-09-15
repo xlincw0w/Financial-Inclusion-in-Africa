@@ -54,7 +54,7 @@ class neural_net():
         plt.show()
         
     def save_model(self, accuracy):
-        if accuracy > 0.75:
+        if accuracy > 0.92:
             pickle.dump(self.model, open('model.pickle', 'wb'))
             print('Model file saved.')
         else:
